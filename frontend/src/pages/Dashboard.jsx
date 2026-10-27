@@ -4,13 +4,10 @@ import api from '../services/api';
 import { socket, connectSocket, joinTracking } from '../services/socket';
 import { toast } from 'react-toastify';
 
-// Sub-components
-import DashboardHeader from '../components/dashboard/DashboardHeader';
-import WeatherMarquee from '../components/dashboard/WeatherMarquee';
-import AuthorityView from '../components/dashboard/AuthorityView';
-import CooperativeView from '../components/dashboard/CooperativeView';
-import FishermanView from '../components/dashboard/FishermanView';
-import AllUsersHub from '../components/dashboard/AllUsersHub';
+// Dedicated Distinct Dashboards per Role
+import FishermanDashboard from '../components/dashboard/FishermanDashboard';
+import CooperativeDashboard from '../components/dashboard/CooperativeDashboard';
+import AuthorityDashboard from '../components/dashboard/AuthorityDashboard';
 
 // Modals
 import EmergencySOSModal from '../components/dashboard/EmergencySOSModal';
@@ -19,15 +16,6 @@ import QuickFuelModal from '../components/dashboard/QuickFuelModal';
 
 export default function Dashboard() {
   const { user } = useAuth();
-
-  // Determine initial active view based on user role
-  const getInitialView = () => {
-    if (user?.role === 'fisherman') return 'fisherman';
-    if (user?.role === 'cooperative_admin') return 'cooperative_admin';
-    return 'marine_authority';
-  };
-
-  const [activeView, setActiveView] = useState(getInitialView);
   const [stats, setStats] = useState(null);
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -95,13 +83,6 @@ export default function Dashboard() {
     };
   }, [fetchDashboardData]);
 
-  // Update initial view if user changes or loads
-  useEffect(() => {
-    if (user?.role) {
-      setActiveView(getInitialView());
-    }
-  }, [user?.role]);
-
   if (loading && !stats) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
@@ -117,58 +98,43 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* 1. Header Command Deck with Maritime Clock & Role Persona Switcher */}
-      <DashboardHeader
-        user={user}
-        activeView={activeView}
-        setActiveView={setActiveView}
-        onRefresh={() => fetchDashboardData(false)}
-        loading={loading}
-        onOpenSOS={() => setSosModalOpen(true)}
-        stats={stats}
-      />
+    <div>
+      {/* 1. Distinct Dashboard strictly based on logged in user role */}
+      {user?.role === 'fisherman' && (
+        <FishermanDashboard
+          user={user}
+          stats={stats}
+          weather={weather}
+          onOpenSOS={() => setSosModalOpen(true)}
+          onOpenCatchModal={() => setCatchModalOpen(true)}
+          onOpenFuelModal={() => setFuelModalOpen(true)}
+          onRefresh={() => fetchDashboardData(false)}
+          loading={loading}
+        />
+      )}
 
-      {/* 2. Sea Conditions & Atmospheric Weather Marquee */}
-      {weather && <WeatherMarquee weather={weather} />}
+      {user?.role === 'cooperative_admin' && (
+        <CooperativeDashboard
+          user={user}
+          stats={stats}
+          weather={weather}
+          onRefresh={() => fetchDashboardData(false)}
+          loading={loading}
+          onOpenCatchModal={() => setCatchModalOpen(true)}
+        />
+      )}
 
-      {/* 3. Role-Tailored Operational Views */}
-      <div className="transition-all duration-300">
-        {activeView === 'marine_authority' && (
-          <AuthorityView
-            stats={stats}
-            onRefreshData={() => fetchDashboardData(true)}
-            onSwitchTab={(viewId) => setActiveView(viewId)}
-          />
-        )}
+      {(user?.role === 'marine_authority' || (!user?.role && user?.role !== 'fisherman' && user?.role !== 'cooperative_admin')) && (
+        <AuthorityDashboard
+          user={user}
+          stats={stats}
+          weather={weather}
+          onRefresh={() => fetchDashboardData(false)}
+          loading={loading}
+        />
+      )}
 
-        {activeView === 'cooperative_admin' && (
-          <CooperativeView
-            stats={stats}
-            onRefreshData={() => fetchDashboardData(true)}
-            onSwitchTab={(viewId) => setActiveView(viewId)}
-            onOpenCatchModal={() => setCatchModalOpen(true)}
-          />
-        )}
-
-        {activeView === 'fisherman' && (
-          <FishermanView
-            stats={stats}
-            onOpenSOS={() => setSosModalOpen(true)}
-            onOpenCatchModal={() => setCatchModalOpen(true)}
-            onOpenFuelModal={() => setFuelModalOpen(true)}
-          />
-        )}
-
-        {activeView === 'all_users' && (
-          <AllUsersHub
-            stats={stats}
-            onRefreshData={() => fetchDashboardData(true)}
-          />
-        )}
-      </div>
-
-      {/* 4. Interactive Modals */}
+      {/* 2. Interactive Quick Modals */}
       <EmergencySOSModal
         isOpen={sosModalOpen}
         onClose={() => setSosModalOpen(false)}
