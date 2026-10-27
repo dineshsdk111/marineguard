@@ -1,16 +1,47 @@
-web:
-  build:
-    directory: backend
-  command: npm install
-  run:
-    command: npm start
-
 services:
+  # 1. Backend API & WebSockets (Node.js Express + Socket.IO)
+  - type: web
+    name: marineguard-backend
+    env: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRE
+        value: 7d
+      - key: MONGODB_URI
+        sync: false
+      - key: WEATHER_API_KEY
+        sync: false
+
+  # 2. Frontend Application (React + Vite)
   - type: web
     name: marineguard-frontend
     env: static
-    build:
-      directory: frontend
-      command: npm install && npm run build
-    static:
-      publish_path: dist
+    plan: free
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: marineguard-backend
+          property: host
+      - key: VITE_SOCKET_URL
+        fromService:
+          type: web
+          name: marineguard-backend
+          property: host
