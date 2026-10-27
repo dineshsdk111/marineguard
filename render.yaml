@@ -1,0 +1,16 @@
+web:
+  build:
+    directory: backend
+  command: npm install
+  run:
+    command: npm start
+
+services:
+  - type: web
+    name: marineguard-frontend
+    env: static
+    build:
+      directory: frontend
+      command: npm install && npm run build
+    static:
+      publish_path: dist
