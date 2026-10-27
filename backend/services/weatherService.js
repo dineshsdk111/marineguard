@@ -5,6 +5,25 @@ const OPEN_METEO_BASE = 'https://api.open-meteo.com/v1';
 // Mumbai/Konkan coast coordinates
 const DEFAULT_LAT = 18.95;
 const DEFAULT_LNG = 72.85;
+// Cache weather responses for 10 minutes to avoid Open-Meteo rate limits (429)
+const cache = new Map();
+const CACHE_TTL = 10 * 60 * 1000;
+
+async function cachedGet(url, params) {
+  const key = url + JSON.stringify(params);
+  const hit = cache.get(key);
+  if (hit && Date.now() - hit.time < CACHE_TTL) return hit.res;
+  try {
+    const res = await axios.get(url, { params, timeout: 10000 });
+    cache.set(key, { time: Date.now(), res });
+    return res;
+  } catch (err) {
+    if (hit) return hit.res; // if the API fails, serve the last good data
+    throw err;
+  }
+}
+
+const http = { get: (url, cfg) => cachedGet(url, cfg.params) };
 
 const WMO_WEATHER_CODES = {
   0: { desc: 'Clear sky', icon: '☀️', severity: 'low' },
@@ -50,7 +69,7 @@ function assessWindSeverity(speed) {
 
 async function getCurrentWeather(lat = DEFAULT_LAT, lng = DEFAULT_LNG) {
   try {
-    const res = await axios.get(`${OPEN_METEO_BASE}/forecast`, {
+    const res = await http.get(`${OPEN_METEO_BASE}/forecast`, { 
       params: {
         latitude: lat,
         longitude: lng,
@@ -92,7 +111,7 @@ async function getCurrentWeather(lat = DEFAULT_LAT, lng = DEFAULT_LNG) {
 
 async function getMarineWeather(lat = DEFAULT_LAT, lng = DEFAULT_LNG) {
   try {
-    const res = await axios.get(`${OPEN_METEO_BASE}/forecast`, {
+    const res = await http.get(`${OPEN_METEO_BASE}/forecast`, {
       params: {
         latitude: lat,
         longitude: lng,
