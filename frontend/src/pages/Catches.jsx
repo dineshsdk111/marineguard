@@ -359,9 +359,10 @@ export default function Catches() {
                   className="select-field text-xs py-2"
                 >
                   <option value="trawling">Trawling</option>
-                  <option value="longlining">Longlining</option>
-                  <option value="gillnetting">Gillnetting</option>
-                  <option value="purse_seining">Purse Seining</option>
+                  <option value="longline">Longline / Longlining</option>
+                  <option value="gillnet">Gillnet / Gillnetting</option>
+                  <option value="purse_seine">Purse Seine</option>
+                  <option value="other">Other Method</option>
                 </select>
               </div>
 

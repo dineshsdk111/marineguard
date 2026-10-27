@@ -12,7 +12,11 @@ const CatchRecordSchema = new mongoose.Schema({
     type: { type: String, default: 'Point' },
     coordinates: { type: [Number] },
   },
-  fishingMethod: { type: String, enum: ['trawling', 'longline', 'gillnet', 'purse_seine', 'other'], default: 'trawling' },
+  fishingMethod: { 
+    type: String, 
+    enum: ['trawling', 'longline', 'longlining', 'gillnet', 'gillnetting', 'purse_seine', 'purse_seining', 'other'], 
+    default: 'trawling' 
+  },
   notes: { type: String },
 }, { timestamps: true });
 

@@ -7,6 +7,11 @@ exports.createCatch = async (req, res, next) => {
     if (!data.fisherman && req.user) {
       data.fisherman = req.user._id || req.user.id;
     }
+    // Normalize aliases
+    if (data.fishingMethod === 'longlining') data.fishingMethod = 'longline';
+    if (data.fishingMethod === 'gillnetting') data.fishingMethod = 'gillnet';
+    if (data.fishingMethod === 'purse_seining') data.fishingMethod = 'purse_seine';
+
     const catchRecord = await CatchRecord.create(data);
     res.status(201).json({ success: true, catch: catchRecord });
   } catch (err) {
